@@ -90,8 +90,3 @@ Use these glasses to learn the game of chess and beat any opponent! Simply press
 18. If you want, you can test sending images to Azure Blob Storage
    ```bash
    python3 send_blob.py
-
----
-
-## Questions and Bugs
-make an issue!
