@@ -88,5 +88,5 @@ Use these glasses to learn the game of chess and beat any opponent! Simply press
     ```bash
     python3 bin2jpg.py
 18. If you want, you can test sending images to Azure Blob Storage
-   ```bash
-   python3 send_blob.py
+    ```bash
+    python3 send_blob.py
