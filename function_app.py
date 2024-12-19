@@ -13,10 +13,14 @@ def blob_trigger(myblob: func.InputStream):
                  f"Name: {myblob.name} "
                  f"Blob Size: {myblob.length} bytes")
 
-    blob_data = myblob.read()
-
-    output_path = "./binary/output_" + str(time.time()) + ".bin"
-    with open(output_path, "wb") as file:
-        file.write(blob_data)
+    try:
+        blob_data = myblob.read()
+        output_path = "./binary/output_" + str(time.time()) + ".bin"
+        with open(output_path, "wb") as file:
+            file.write(blob_data)
+    except Exception as e:
+        error_file_path = "errors.txt"
+        with open(error_file_path, "a") as file:
+            file.write(str(time.time) + ": " + str(e) + "\n")
             
     logging.info("Blob byte stream saved as 'output_image_bytes.bin'")

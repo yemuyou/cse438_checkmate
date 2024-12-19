@@ -59,6 +59,76 @@ engine = chess.engine.SimpleEngine.popen_uci(stockfish_path)
 folder_to_monitor = "./modified_images"
 
 existing_files = set(os.listdir(folder_to_monitor))
+                
+def find_letter(pred_class):
+    parsed = pred_class.split("-")
+    letter = None
+    if (parsed[1] == "pawn"):
+        letter = "p"
+    elif (parsed[1] == "rook"):
+        letter = "r"
+    elif (parsed[1] == "bishop"):
+        letter = "b"
+    elif (parsed[1] == "knight"):
+        letter = "n"
+    elif (parsed[1] == "king"):
+        letter = "k"
+    elif (parsed[1] == "queen"):
+        letter = "q"
+
+    if (parsed[0] == "white"): 
+        letter = letter.upper()
+
+    return letter
+
+def find_position(x,y,height,image_width,image_height):
+    first_index = int((y + height / 4 - 90) / (image_height - 90 * 2) * 8) # int to floor
+    second_index = int((x - 90) / (image_width - 90 * 2) * 8)
+
+    return first_index, second_index
+
+def place_letter(letter, first_index, second_index):
+    array[first_index][second_index] = letter
+
+def matrix_to_fen(matrix):
+    fen_rows = []
+
+    for row in matrix:
+        fen_row = ""
+        empty_count = 0
+        for square in row:
+            if square is None:
+                empty_count += 1
+            else:
+                if empty_count > 0:
+                    fen_row += str(empty_count)
+                    empty_count = 0
+                fen_row += square
+
+        if empty_count > 0:
+            fen_row += str(empty_count)
+
+        fen_rows.append(fen_row)
+
+    board_fen = "/".join(fen_rows)
+
+    side_to_move = "w"       
+    castling = "KQkq"        
+    en_passant = "-"         
+    halfmove_clock = "0"     
+    fullmove_number = "1"    
+
+    fen = f"{board_fen} {side_to_move} {castling} {en_passant} {halfmove_clock} {fullmove_number}"
+
+    return fen
+
+def get_best_move(fen: str):
+    board = chess.Board(fen)
+
+    result = engine.play(board, chess.engine.Limit(depth=20)) 
+    best_move = result.move
+
+    return best_move
 
 print(f"Monitoring folder: {folder_to_monitor}...")
 try:
@@ -72,75 +142,6 @@ try:
 
                 array = [[None for _ in range(8)] for _ in range(8)]
 
-                def find_letter(pred_class):
-                    parsed = pred_class.split("-")
-                    letter = None
-                    if (parsed[1] == "pawn"):
-                        letter = "p"
-                    elif (parsed[1] == "rook"):
-                        letter = "r"
-                    elif (parsed[1] == "bishop"):
-                        letter = "b"
-                    elif (parsed[1] == "knight"):
-                        letter = "n"
-                    elif (parsed[1] == "king"):
-                        letter = "k"
-                    elif (parsed[1] == "queen"):
-                        letter = "q"
-
-                    if (parsed[0] == "white"): 
-                        letter = letter.upper()
-
-                    return letter
-
-                def find_position(x,y,height,image_width,image_height):
-                    first_index = int((y + height / 4 - 90) / (image_height - 90 * 2) * 8) # int to floor
-                    second_index = int((x - 90) / (image_width - 90 * 2) * 8)
-
-                    return first_index, second_index
-
-                def place_letter(letter, first_index, second_index):
-                    array[first_index][second_index] = letter
-
-                def matrix_to_fen(matrix):
-                    fen_rows = []
-
-                    for row in matrix:
-                        fen_row = ""
-                        empty_count = 0
-                        for square in row:
-                            if square is None:
-                                empty_count += 1
-                            else:
-                                if empty_count > 0:
-                                    fen_row += str(empty_count)
-                                    empty_count = 0
-                                fen_row += square
-
-                        if empty_count > 0:
-                            fen_row += str(empty_count)
-
-                        fen_rows.append(fen_row)
-
-                    board_fen = "/".join(fen_rows)
-
-                    side_to_move = "w"       
-                    castling = "KQkq"        
-                    en_passant = "-"         
-                    halfmove_clock = "0"     
-                    fullmove_number = "1"    
-
-                    fen = f"{board_fen} {side_to_move} {castling} {en_passant} {halfmove_clock} {fullmove_number}"
-
-                    return fen
-
-                def get_best_move(fen: str):
-                    board = chess.Board(fen)
-
-                    result = engine.play(board, chess.engine.Limit(depth=20)) 
-                    best_move = result.move
-
-                    return best_move
 
                 with open("inference_result.jpg", "rb") as img_file:
                     response = requests.post(api_url, files={"file": img_file})
@@ -157,12 +158,24 @@ try:
                     height = prediction["height"]
                     pred_class = prediction["class"]
 
-                    letter = find_letter(pred_class)
-                    first_index, second_index = find_position(x, y, height, image_width, image_height)
-                    place_letter(letter, first_index, second_index)
+                    try:
+                        letter = find_letter(pred_class)
+                        first_index, second_index = find_position(x, y, height, image_width, image_height)
+                        place_letter(letter, first_index, second_index)
+                    except Exception as e:
+                        error_file_path = "errors.txt"
+                        with open(error_file_path, "a") as file:
+                            file.write(str(time.time) + ": " + str(e) + "\n")
 
                 print(array)
-                fen = matrix_to_fen(array)
+                
+                try:
+                    fen = matrix_to_fen(array)
+                except Exception as e:
+                    error_file_path = "errors.txt"
+                    with open(error_file_path, "a") as file:
+                        file.write(str(time.time) + ": " + str(e) + "\n")
+                        
                 print(fen)
 
                 try:
@@ -173,6 +186,9 @@ try:
                 except Exception as e:
                     subject = "retry image:" + str(e)
                     print(subject)
+                    error_file_path = "errors.txt"
+                    with open(error_file_path, "a") as file:
+                        file.write(str(time.time) + ": " + str(e) + "\n")
                     
                 send_email(subject)
                 
@@ -184,3 +200,6 @@ try:
 
 except KeyboardInterrupt:
     print("\nMonitoring stopped.")
+    error_file_path = "errors.txt"
+    with open(error_file_path, "a") as file:
+        file.write(str(time.time) + ": " + str(e) + "\n")

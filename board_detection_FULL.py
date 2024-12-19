@@ -15,11 +15,16 @@ try:
         print(new_files)
         if new_files:
             for new_file in new_files:
-                input_string = "--input=../image/" + str(new_file)
-                output_string = "--output=../modified_images/" + str(new_file)
-                subprocess.run(["python3.7", "main.py", "detect", input_string, output_string], cwd="neural-chessboard") 
-                file_path = folder_to_monitor + "/" + str(new_file) 
-                os.remove(file_path)
+                try:
+                    input_string = "--input=../image/" + str(new_file)
+                    output_string = "--output=../modified_images/" + str(new_file)
+                    subprocess.run(["python3.7", "main.py", "detect", input_string, output_string], cwd="neural-chessboard") 
+                    file_path = folder_to_monitor + "/" + str(new_file) 
+                    os.remove(file_path)
+                except Exception as e:
+                    error_file_path = "errors.txt"
+                    with open(error_file_path, "a") as file:
+                        file.write(str(time.time) + ": " + str(e) + "\n")
         
         existing_files = current_files
         time.sleep(1)

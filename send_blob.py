@@ -1,4 +1,5 @@
 from azure.storage.blob import BlobServiceClient
+import time
 
 CONTAINER_NAME = "chess"
 BLOB_NAME = "new_blob.jpeg"
@@ -17,5 +18,8 @@ def upload_image_to_blob():
     
     except Exception as e:
         print(f"An error occurred: {e}")
+        error_file_path = "errors.txt"
+        with open(error_file_path, "a") as file:
+            file.write(str(time.time) + ": " + str(e) + "\n")
 
 upload_image_to_blob()
